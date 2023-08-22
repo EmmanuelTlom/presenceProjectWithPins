@@ -339,6 +339,21 @@
                             />
                             Add
                           </q-btn>
+                          <q-btn
+                            no-caps
+                            @click="getPinsByAttendance(props.row)"
+                            flat
+                            class="text2 grey q-pr-md"
+                            size="sm"
+                            no-wrap
+                            :loading="loaders.save[props]"
+                          >
+                            <img
+                              style="width: 18px; height: 18px"
+                              src="../assets/pass.svg"
+                              alt=""
+                            />
+                          </q-btn>
                         </div>
                       </q-td>
                     </template>
@@ -456,33 +471,32 @@
           </div>
           <div class="right_side">
             <div class="div">
-              <div class="text2 grey">QR Code</div>
+              <div class="text2 grey">Take attendance</div>
               <q-btn
                 v-if="store.userdetails.role !== 'lecturer'"
-                @click="readQr = true"
+                @click="markCodesModal = true"
                 class="offer minimize"
                 flat
                 no-caps
               >
                 <img
                   style="width: 16px; height: 16px"
-                  src="../assets/qr.svg"
+                  src="../assets/pass.svg"
                   alt=""
-                />Scan QR code
+                />Enter pin
               </q-btn>
               <q-btn
                 v-if="store.userdetails.role === 'lecturer'"
-                @click="generateQr"
+                @click="getPins = true"
                 class="offer minimize"
                 flat
-                :loading="loading"
                 no-caps
               >
                 <img
                   style="width: 16px; height: 16px"
-                  src="../assets/qr.svg"
+                  src="../assets/pass.svg"
                   alt=""
-                />Generate QR code
+                />Generate pins
               </q-btn>
             </div>
 
@@ -833,73 +847,6 @@
                 </div>
               </template>
             </q-table>
-          </div>
-        </div>
-      </q-card>
-    </q-dialog>
-    <q-dialog class="dialog" v-model="addClass">
-      <q-card class="q-pa-sm list_card">
-        <div class="auth">
-          <div class="row q-pb-sm justify-between items-center">
-            <div class="text5">Attendees list</div>
-
-            <q-btn @click="addClass = false" flat no-caps>
-              <img src="../assets/circle.svg" alt="" />
-            </q-btn>
-          </div>
-          <div class="text2">
-            Create a row for a fixed class occurring outside the regular
-            schedule
-          </div>
-          <div class="q-gutter-md q-mt-sm time_date row no-wrap items-center">
-            <q-date v-model="model" mask="YYYY-MM-DD HH:mm" color="primary" />
-            <q-time v-model="model" mask="YYYY-MM-DD HH:mm" color="primary" />
-          </div>
-          <div class="grid three">
-            <div class="input">
-              <label for=""> Day of the week </label>
-
-              <div class="input_wrap">
-                <select v-model="data.department" name="">
-                  <option value="1">Sunday</option>
-                </select>
-              </div>
-            </div>
-            <div class="input">
-              <label for=""> Day of the week </label>
-              <div class="copy">
-                <div class="copy_">09 : 30 AM</div>
-                <q-btn no-wrap class="offer minimize" flat no-caps>
-                  <img
-                    style="width: 16px; height: 16px"
-                    src="../assets/clock.svg"
-                    alt=""
-                  />
-                </q-btn>
-              </div>
-            </div>
-            <div class="input">
-              <label for=""> Day of the week </label>
-              <div class="copy">
-                <div class="copy_">09 : 30 AM</div>
-                <q-btn no-wrap class="offer minimize" flat no-caps>
-                  <img
-                    style="width: 16px; height: 16px"
-                    src="../assets/clock.svg"
-                    alt=""
-                  />
-                </q-btn>
-              </div>
-            </div>
-          </div>
-
-          <div
-            style="gap: 0.5rem"
-            class="total no-wrap row justify-end q-mt-lg items-center"
-          >
-            <q-btn style="width: 100%" class="apply bg-primary" no-caps flat>
-              Save
-            </q-btn>
           </div>
         </div>
       </q-card>
@@ -1381,6 +1328,271 @@
         </div>
       </q-card>
     </q-dialog>
+    <q-dialog v-model="getPins">
+      <q-card>
+        <div>
+          <div class="row q-mb-md justify-center">
+            <div class="checkcircle pur">
+              <img src="../assets/passcode.svg" alt="" />
+            </div>
+          </div>
+          <div class="text4 big grey text-center">How many pins?</div>
+
+          <div class="text2 q-my-sm grey text-center">
+            Type in how many pins you want to generate
+          </div>
+          <div class="div auth q-mt-sm">
+            <div class="input">
+              <div class="input_wrap">
+                <input
+                  placeholder="Enter a number between 1 and 2000"
+                  v-model="codesNo"
+                  type="text"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="gap: 0.5rem"
+            class="total no-wrap row justify-end q-mt-lg items-center"
+          >
+            <q-btn
+              style="width: 100%"
+              class="apply bg-primary"
+              no-caps
+              @click="generatePins"
+              flat
+              :loading="loading"
+            >
+              Generate
+            </q-btn>
+          </div>
+        </div>
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="markCodesModal">
+      <q-card>
+        <div>
+          <div class="row q-mb-md justify-center">
+            <div class="checkcircle pur">
+              <img src="../assets/passcode.svg" alt="" />
+            </div>
+          </div>
+          <div class="text4 big grey text-center">Enter attendance pin</div>
+
+          <div class="text2 q-my-sm grey text-center">
+            Enter the 6 digit pin your lecturer gave you.
+          </div>
+          <div class="div auth q-mt-sm">
+            <div class="input">
+              <div class="input_wrap">
+                <select v-model="selectedAttendace">
+                  <option disabled value="">
+                    Please select the attendace you want to mark
+                  </option>
+                  <option
+                    v-for="att in sortedStudentAttendanceData"
+                    :key="att._id"
+                    :value="att._id"
+                  >
+                    {{ att.course.title }} attendance on
+                    {{
+                      new Date(att.createdAt).toLocaleDateString("en-US", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    }}
+                    {{
+                      new Date(
+                        new Date(att.createdAt).getTime() - 60 * 60 * 1000
+                      ).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      })
+                    }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div v-if="selectedAttendace !== ''" class="input">
+              <div class="input_wrap">
+                <input
+                  placeholder="Enter attendance pin"
+                  v-model="markCodesNo"
+                  type="text"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="gap: 0.5rem"
+            class="total no-wrap row justify-end q-mt-lg items-center"
+          >
+            <q-btn
+              style="width: 100%"
+              class="apply bg-primary"
+              no-caps
+              :disable="selectedAttendace === ''"
+              @click="markCodePins"
+              flat
+              :loading="loading"
+            >
+              Mark Attendance
+            </q-btn>
+          </div>
+        </div>
+      </q-card>
+    </q-dialog>
+    <q-dialog class="dialog" v-model="AttendeesPins">
+      <q-card class="q-pa-sm list_card">
+        <div class="row justify-between items-center">
+          <div class="row justify-center">
+            <div class="checkcircle pur">
+              <img src="../assets/passcode.svg" alt="" />
+            </div>
+          </div>
+          <q-btn @click="AttendeesPins = false" flat no-caps>
+            <img src="../assets/circle.svg" alt="" />
+          </q-btn>
+        </div>
+        <div class="auth">
+          <div class="row q-pa-sm items-center justify-between">
+            <div>
+              <div class="row text5 items-center">
+                Attendance pins
+                <div class="f_crumb q-ml-sm">{{ pinsRow.length }}</div>
+              </div>
+              <div class="text2 grey">
+                Below are unique pins for today’s class
+                {{
+                  new Date(pinsRow[0].createdAt).toLocaleDateString("en-US", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })
+                }}
+              </div>
+            </div>
+            <div>
+              <q-btn
+                style="width: fit-content"
+                class="offer minimize"
+                flat
+                @click="exportTablePins"
+                no-caps
+              >
+                <img
+                  style="width: 16px; height: 16px"
+                  src="../assets/downloa.svg"
+                  alt=""
+                />Export
+              </q-btn>
+            </div>
+          </div>
+
+          <div class="">
+            <q-table
+              :rows="pinsRow"
+              :hide-header="mode === 'grid'"
+              :columns="columnsPin"
+              row-key="investor"
+              :filter="filter2"
+              class="sort_tables"
+              :loading="loading"
+              v-model:pagination="pagination"
+              @request="onRequest"
+            >
+              <template v-slot:body-cell-code="props">
+                <q-td class="text2 grey" :props="props">
+                  <div style="gap: 1rem" class="">
+                    <div>
+                      {{ props.row.code }}
+                    </div>
+                    <!-- <div v-if="props.row.used" class="row no-wrap items-center">
+                      <div class="status absent">Used</div>
+                      <q-btn
+                        @click="copyPin(props.row)"
+                        style="min-height: auto"
+                        flat
+                      >
+                        <img
+                          style="width: 20px; height: 20px"
+                          src="../assets/copyNew.svg"
+                          alt=""
+                        />
+                      </q-btn>
+                    </div>
+
+                    <div v-else class="row no-wrap items-center">
+                      <div class="status present">Unused</div>
+                      <q-btn
+                        @click="copyPin(props.row)"
+                        style="min-height: auto"
+                        flat
+                      >
+                        <img
+                          style="width: 20px; height: 20px"
+                          src="../assets/copyNew.svg"
+                          alt=""
+                        />
+                      </q-btn>
+                    </div> -->
+                  </div>
+                </q-td>
+              </template>
+              <template v-slot:body-cell-used="props">
+                <q-td class="text2 grey" :props="props">
+                  <div
+                    v-if="props.row.used"
+                    class="row no-wrap justify-end items-center"
+                  >
+                    <div class="status absent">Used</div>
+                    <q-btn
+                      @click="copyPin(props.row)"
+                      style="min-height: auto"
+                      flat
+                    >
+                      <img
+                        style="width: 20px; height: 20px"
+                        src="../assets/copyNew.svg"
+                        alt=""
+                      />
+                    </q-btn>
+                  </div>
+
+                  <div v-else class="row no-wrap justify-end items-center">
+                    <div class="status present">Unused</div>
+                    <q-btn
+                      @click="copyPin(props.row)"
+                      style="min-height: auto"
+                      flat
+                    >
+                      <img
+                        style="width: 20px; height: 20px"
+                        src="../assets/copyNew.svg"
+                        alt=""
+                      />
+                    </q-btn>
+                  </div>
+                </q-td>
+              </template>
+
+              <template v-slot:no-data="{ message }">
+                <div
+                  class="full-width row flex-center text-negative q-gutter-sm"
+                >
+                  <span> {{ message }} </span>
+                </div>
+              </template>
+            </q-table>
+          </div>
+        </div>
+      </q-card>
+    </q-dialog>
   </q-layout>
 </template>
 
@@ -1406,7 +1618,10 @@ let store = useMyAuthStore();
 import VueQrcode from "vue-qrcode";
 let scanQr = ref(false);
 let pageurl = ref("");
+let selectedAttendace = ref("");
+let markCodesNo = ref("");
 let Attendeeslist = ref(false);
+let markCodesModal = ref(false);
 let loadingEdit = ref(false);
 let loadingDel = ref(false);
 let attendanceData = ref(false);
@@ -1417,7 +1632,10 @@ let addClass = ref(false);
 let getQr = ref(false);
 let downloadQR = ref(false);
 let selectStudent = ref(false);
+let getPins = ref(false);
+let pinsRow = ref([]);
 let editCourse = ref(false);
+let AttendeesPins = ref(false);
 let spin = ref(true);
 let data = ref({});
 let edit = ref({
@@ -1434,6 +1652,7 @@ let edit = ref({
 });
 let model = ref("");
 let attendanceId = ref("");
+let codesNo = ref("");
 let dataYouSee = ref("View all");
 let course = ref({});
 let multiple = ref([]);
@@ -1503,6 +1722,41 @@ const columns = [
     field: "actions",
     sortable: false,
   },
+];
+const columnsPin = [
+  {
+    name: "code",
+    required: true,
+    label: "Pin",
+    align: "left",
+    field: "code",
+    sortable: true,
+  },
+  {
+    name: "used",
+    required: true,
+    label: "Status",
+    align: "right",
+    field: "used",
+    sortable: true,
+  },
+  // {
+  //   name: "code",
+  //   required: true,
+  //   label: "Pin",
+  //   align: "left",
+  //   field: "code",
+  //   sortable: true,
+  // },
+
+  // {
+  //   name: "actions",
+  //   required: true,
+  //   label: "",
+  //   align: "left",
+  //   field: "actions",
+  //   sortable: false,
+  // },
 ];
 const columnsTwo = [
   {
@@ -1631,6 +1885,25 @@ const onRequest = (props) => {
     });
 };
 
+const copyPin = (pin) => {
+  // console.log(pin);
+  copyToClipboard(pin.code)
+    .then(() => {
+      Notify.create({
+        message: "Copied",
+        color: "green",
+        position: "top",
+      });
+    })
+    .catch(() => {
+      // fail
+      Notify.create({
+        message: "Failed",
+        color: "red",
+        position: "top",
+      });
+    });
+};
 const copy = () => {
   copyToClipboard(pageurl.value)
     .then(() => {
@@ -1646,6 +1919,27 @@ const copy = () => {
         message: "Failed",
         color: "red",
         position: "top",
+      });
+    });
+};
+const getPinsByAttendance = (data) => {
+  Loading.show();
+  api
+    .get(`attendance/codes/${data._id}`)
+    .then((response) => {
+      // console.log(response);
+      pinsRow.value = response.data.data;
+      AttendeesPins.value = true;
+      Loading.hide();
+    })
+    .catch(({ response }) => {
+      // console.log(response);
+      Loading.hide();
+      Notify.create({
+        message: response.data.error,
+        color: "red",
+        position: "bottom",
+        actions: [{ icon: "close", color: "white" }],
       });
     });
 };
@@ -1706,31 +2000,119 @@ const onDataUrlChange = (dataUrll) => {
   dataUrl.value = dataUrll;
 };
 const generateQr = () => {
-  loading.value = true;
-  api
-    .post(`attendance/${course.value._id}`)
-    .then((response) => {
-      // console.log(response);
-      loading.value = false;
-      Notify.create({
-        message: response.data.message,
-        color: "green",
-        position: "top",
-      });
-
-      downloadQR.value = true;
-      barcodeId.value = response.data.data.barcodeId;
-    })
-    .catch(({ response }) => {
-      // console.log(response);
-      loading.value = false;
-      Notify.create({
-        message: response.data.error,
-        color: "red",
-        position: "bottom",
-        actions: [{ icon: "close", color: "white" }],
-      });
+  if (codesNo.value === "") {
+    Notify.create({
+      message: "Please type in a value",
+      color: "red",
+      position: "top",
     });
+  } else {
+    loading.value = true;
+    api
+      .post(`attendance/${course.value._id}`, {
+        numOfCodes: codesNo.value,
+      })
+      .then((response) => {
+        // console.log(response);
+        loading.value = false;
+        Notify.create({
+          message: response.data.message,
+          color: "green",
+          position: "top",
+        });
+
+        // downloadQR.value = true;
+        // barcodeId.value = response.data.data.barcodeId;
+      })
+      .catch(({ response }) => {
+        // console.log(response);
+        loading.value = false;
+        Notify.create({
+          message: response.data.error,
+          color: "red",
+          position: "bottom",
+          actions: [{ icon: "close", color: "white" }],
+        });
+      });
+  }
+};
+
+const generatePins = () => {
+  if (codesNo.value === "") {
+    Notify.create({
+      message: "Please type in a value",
+      color: "red",
+      position: "top",
+    });
+  } else {
+    loading.value = true;
+    api
+      .post(`attendance/${course.value._id}`, {
+        numOfCodes: codesNo.value,
+      })
+      .then((response) => {
+        // console.log(response);
+        loading.value = false;
+        Notify.create({
+          message: response.data.message,
+          color: "green",
+          position: "top",
+        });
+
+        // downloadQR.value = true;
+        getPins.value = false;
+        pinsRow.value = response.data.data.uniqueCodes;
+        AttendeesPins.value = true;
+        // barcodeId.value = response.data.data.barcodeId;
+      })
+      .catch(({ response }) => {
+        // console.log(response);
+        loading.value = false;
+        Notify.create({
+          message: response.data.error,
+          color: "red",
+          position: "bottom",
+          actions: [{ icon: "close", color: "white" }],
+        });
+      });
+  }
+};
+const markCodePins = () => {
+  if (markCodesNo.value === "") {
+    Notify.create({
+      message: "Please type in a value",
+      color: "red",
+      position: "top",
+    });
+  } else {
+    loading.value = true;
+    api
+      .put(`attendance/mark/${selectedAttendace.value}`, {
+        code: markCodesNo.value,
+      })
+      .then((response) => {
+        console.log(response);
+        loading.value = false;
+        Notify.create({
+          message: response.data.message,
+          color: "green",
+          position: "top",
+        });
+
+        markCodesModal.value = false;
+        // barcodeId.value = response.data.data.barcodeId;
+      })
+      .catch(({ response }) => {
+        // console.log(response);
+        loading.value = false;
+        Notify.create({
+          message: response.data.error,
+          color: "red",
+          position: "bottom",
+          actions: [{ icon: "close", color: "white" }],
+        });
+      });
+  }
 };
 const getCourseagain = async () => {
   try {
@@ -1770,7 +2152,7 @@ onMounted(async () => {
     spin.value = false;
 
     const attendance = await api.get(`attendance/${route.params.slug}`);
-    // console.log(attendance);
+    console.log(attendance);
 
     if (store.userdetails.role === "lecturer") {
       rows.value = attendance.data.data.sort(
@@ -2046,6 +2428,33 @@ const exportTable = () => {
     )
     .join("\r\n");
   const status = exportFile(`Attendance sheet`, content, "text/csv");
+  if (status !== true) {
+    Notify.create({
+      message: "Browser denied file download...",
+      color: "negative",
+      icon: "warning",
+    });
+  }
+};
+const exportTablePins = () => {
+  // naive encoding to csv format
+  const content = [columnsPin.map((col) => wrapCsvValue(col.label))]
+    .concat(
+      pinsRow.value.map((row) =>
+        columnsPin
+          .map((col) =>
+            wrapCsvValue(
+              typeof col.field === "function"
+                ? col.field(row)
+                : row[col.field === void 0 ? col.name : col.field],
+              col.format
+            )
+          )
+          .join(",")
+      )
+    )
+    .join("\r\n");
+  const status = exportFile(`Attendance pins`, content, "text/csv");
   if (status !== true) {
     Notify.create({
       message: "Browser denied file download...",
@@ -2346,6 +2755,12 @@ let departments = ref([
   justify-content: center;
   align-items: center;
   padding: 12px;
+}
+
+.checkcircle.pur {
+  border-radius: 28px;
+  border: 8px solid #f9f5ff;
+  background: #f4ebff;
 }
 .copy .copy_ {
   width: 100%;

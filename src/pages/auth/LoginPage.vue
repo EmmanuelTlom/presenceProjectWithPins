@@ -193,7 +193,7 @@ const login = () => {
       // if(response.data.data.role ==='')
     })
     .catch(({ response }) => {
-      // console.log(response);
+      console.log(response);
       loading.value = false;
       if (
         response.data.message ===
@@ -203,7 +203,7 @@ const login = () => {
       }
       // errors.value = response.data.errors;
       Notify.create({
-        message: response.data.message,
+        message: response.data.error,
         color: "red",
         position: "top",
         actions: [{ icon: "close", color: "white" }],
